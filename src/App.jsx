@@ -1,15 +1,15 @@
-import { useState, useRef, useEffect } from “react”;
-import { initializeApp } from “firebase/app”;
-import { getFirestore, collection, addDoc, serverTimestamp } from “firebase/firestore”;
+import { useState, useRef, useEffect } from "react";
+import { initializeApp } from "firebase/app";
+import { getFirestore, collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 // ─── FIREBASE CONFIG ─────────────────────────────────
 const firebaseConfig = {
-apiKey: “AIzaSyBmhK6Avj0ZZHYxjEKkGUAv_K06zfT57eo”,
-authDomain: “gen-lang-client-0807659054.firebaseapp.com”,
-projectId: “gen-lang-client-0807659054”,
-storageBucket: “gen-lang-client-0807659054.firebasestorage.app”,
-messagingSenderId: “545794815177”,
-appId: “1:545794815177:web:5092f702c2cb3522854918”
+apiKey: "AIzaSyBmhK6Avj0ZZHYxjEKkGUAv_K06zfT57eo",
+authDomain: "gen-lang-client-0807659054.firebaseapp.com",
+projectId: "gen-lang-client-0807659054",
+storageBucket: "gen-lang-client-0807659054.firebasestorage.app",
+messagingSenderId: "545794815177",
+appId: "1:545794815177:web:5092f702c2cb3522854918"
 };
 
 const firebaseApp = initializeApp(firebaseConfig);
@@ -18,18 +18,18 @@ const db = getFirestore(firebaseApp);
 // ─── BRAND CONFIG ─────────────────────────────────────
 // TO CUSTOMIZE PER CLIENT: change ONLY the values below
 const BRAND = {
-name: “KappaKuts Barbershop”,
-tagline: “Where Greatness Is Personified”,
-promo: “FREE Beard Trim”,
-promoDetail: “with your next haircut — KappaKuts regulars only”,
-expiry: “Valid at 10 Beaumaris Dr, Brampton · Expires May 31, 2026”,
-confirmMsg: “Show this screen to your barber to redeem. Stay Frosty. 🔥”,
-primaryColor: “#C9A84C”,
-bg: “#0a0a0a”,
-cardBg: “#111111”,
-border: “#1e1e1e”,
+name: "KappaKuts Barbershop",
+tagline: "Where Greatness Is Personified",
+promo: "FREE Beard Trim",
+promoDetail: "with your next haircut — KappaKuts regulars only",
+expiry: "Valid at 10 Beaumaris Dr, Brampton · Expires May 31, 2026",
+confirmMsg: "Show this screen to your barber to redeem. Stay Frosty. 🔥",
+primaryColor: "#C9A84C",
+bg: "#0a0a0a",
+cardBg: "#111111",
+border: "#1e1e1e",
 // Firestore collection name — change per client so leads stay separate
-leadsCollection: “kappakuts_leads”,
+leadsCollection: "kappakuts_leads",
 };
 // ──────────────────────────────────────────────────────
 
@@ -43,7 +43,7 @@ business: businessName,
 claimedAt: serverTimestamp(),
 });
 } catch (e) {
-console.error(“Lead save error:”, e);
+console.error("Lead save error:", e);
 }
 }
 
@@ -57,13 +57,12 @@ const [pct, setPct] = useState(0);
 useEffect(() => {
 const canvas = canvasRef.current;
 if (!canvas) return;
-const ctx = canvas.getContext(“2d”);
+const ctx = canvas.getContext("2d");
 const dpr = window.devicePixelRatio || 1;
 canvas.width = canvas.offsetWidth * dpr;
 canvas.height = canvas.offsetHeight * dpr;
 ctx.scale(dpr, dpr);
 
-```
 const w = canvas.offsetWidth;
 const h = canvas.offsetHeight;
 
@@ -96,7 +95,6 @@ ctx.fillStyle = "rgba(201,168,76,0.6)";
 ctx.fillText("✂", w / 2, h / 2 + 22);
 
 ctx.globalCompositeOperation = "destination-out";
-```
 
 }, []);
 
@@ -110,49 +108,46 @@ const doScratch = (e) => {
 if (!scratching || won) return;
 e.preventDefault();
 const canvas = canvasRef.current;
-const ctx = canvas.getContext(“2d”);
+const ctx = canvas.getContext("2d");
 const dpr = window.devicePixelRatio || 1;
-ctx.globalCompositeOperation = “destination-out”;
+ctx.globalCompositeOperation = "destination-out";
 const { x, y } = getXY(e, canvas);
 ctx.beginPath();
 ctx.arc(x * dpr, y * dpr, 38 * dpr, 0, Math.PI * 2);
 ctx.fill();
 
-```
 const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
 let cleared = 0;
 for (let i = 3; i < data.length; i += 4) if (data[i] < 128) cleared++;
 const p = Math.round((cleared / (canvas.width * canvas.height)) * 100);
 setPct(p);
 if (p > 55 && !won) { setWon(true); onWin(); }
-```
 
 };
 
 return (
 <div style={{
-position: “relative”, width: “100%”, height: 168,
-borderRadius: 16, overflow: “hidden”,
+position: "relative", width: "100%", height: 168,
+borderRadius: 16, overflow: "hidden",
 border: `1px solid ${BRAND.border}`,
 boxShadow: `0 0 40px rgba(201,168,76,0.08)`,
 }}>
 {/* Prize layer underneath */}
 <div style={{
-position: “absolute”, inset: 0,
-background: “linear-gradient(135deg, #1a1200 0%, #0a0a0a 100%)”,
-display: “flex”, flexDirection: “column”,
-alignItems: “center”, justifyContent: “center”, gap: 6,
+position: "absolute", inset: 0,
+background: "linear-gradient(135deg, #1a1200 0%, #0a0a0a 100%)",
+display: "flex", flexDirection: "column",
+alignItems: "center", justifyContent: "center", gap: 6,
 }}>
-<div style={{ fontSize: 10, color: BRAND.primaryColor, letterSpacing: 3, textTransform: “uppercase”, fontWeight: 700 }}>
+<div style={{ fontSize: 10, color: BRAND.primaryColor, letterSpacing: 3, textTransform: "uppercase", fontWeight: 700 }}>
 🎉 You Won
 </div>
-<div style={{ fontSize: 28, fontWeight: 900, color: “#fff”, letterSpacing: -0.5 }}>
+<div style={{ fontSize: 28, fontWeight: 900, color: "#fff", letterSpacing: -0.5 }}>
 {BRAND.promo}
 </div>
-<div style={{ fontSize: 12, color: “#666” }}>{BRAND.promoDetail}</div>
+<div style={{ fontSize: 12, color: "#666" }}>{BRAND.promoDetail}</div>
 </div>
 
-```
   {/* Scratch canvas */}
   <canvas
     ref={canvasRef}
@@ -181,50 +176,49 @@ alignItems: “center”, justifyContent: “center”, gap: 6,
     </div>
   )}
 </div>
-```
 
 );
 }
 
 // ─── MAIN APP ─────────────────────────────────────────
 export default function App() {
-const [stage, setStage] = useState(“login”); // login | scratch | won
+const [stage, setStage] = useState("login"); // login | scratch | won
 const [method, setMethod] = useState(null);
-const [email, setEmail] = useState(””);
-const [emailError, setEmailError] = useState(””);
+const [email, setEmail] = useState("");
+const [emailError, setEmailError] = useState("");
 const [saving, setSaving] = useState(false);
 
 const S = {
 page: {
-minHeight: “100vh”,
+minHeight: "100vh",
 background: BRAND.bg,
-display: “flex”, alignItems: “center”, justifyContent: “center”,
+display: "flex", alignItems: "center", justifyContent: "center",
 padding: 20,
-fontFamily: “‘DM Sans’, system-ui, sans-serif”,
+fontFamily: "'DM Sans', system-ui, sans-serif",
 },
 card: {
-width: “100%”, maxWidth: 360,
+width: "100%", maxWidth: 360,
 background: BRAND.cardBg,
 borderRadius: 22,
 border: `1px solid ${BRAND.border}`,
-padding: “28px 24px”,
-boxShadow: “0 24px 80px rgba(0,0,0,0.6)”,
+padding: "28px 24px",
+boxShadow: "0 24px 80px rgba(0,0,0,0.6)",
 },
 btn: (bg, color, shadow) => ({
-width: “100%”, padding: “14px 16px”,
-background: bg, border: “none”, borderRadius: 12,
+width: "100%", padding: "14px 16px",
+background: bg, border: "none", borderRadius: 12,
 color, fontSize: 14, fontWeight: 700,
-cursor: “pointer”, display: “flex”,
-alignItems: “center”, justifyContent: “center”, gap: 10,
-boxShadow: shadow || “none”,
-transition: “opacity 0.15s”,
+cursor: "pointer", display: "flex",
+alignItems: "center", justifyContent: "center", gap: 10,
+boxShadow: shadow || "none",
+transition: "opacity 0.15s",
 }),
 label: {
 fontSize: 10, color: BRAND.primaryColor,
-letterSpacing: 3, textTransform: “uppercase”, fontWeight: 700,
+letterSpacing: 3, textTransform: "uppercase", fontWeight: 700,
 },
 divider: {
-display: “flex”, alignItems: “center”, gap: 10, margin: “4px 0”,
+display: "flex", alignItems: "center", gap: 10, margin: "4px 0",
 },
 line: { flex: 1, height: 1, background: BRAND.border },
 };
@@ -234,31 +228,30 @@ setSaving(true);
 setMethod(m);
 await saveLead({ email: null, method: m, businessName: BRAND.name });
 setSaving(false);
-setStage(“scratch”);
+setStage("scratch");
 };
 
 const handleEmail = async () => {
-if (!email.includes(”@”) || !email.includes(”.”)) {
-setEmailError(“Enter a valid email to play.”);
+if (!email.includes("@") || !email.includes(".")) {
+setEmailError("Enter a valid email to play.");
 return;
 }
 setSaving(true);
-setMethod(“email”);
-await saveLead({ email, method: “email”, businessName: BRAND.name });
+setMethod("email");
+await saveLead({ email, method: "email", businessName: BRAND.name });
 setSaving(false);
-setStage(“scratch”);
+setStage("scratch");
 };
 
 const handleWin = () => {
-setTimeout(() => setStage(“won”), 600);
+setTimeout(() => setStage("won"), 600);
 };
 
 // ── LOGIN STAGE ──────────────────────────────────────
-if (stage === “login”) return (
+if (stage === "login") return (
 <div style={S.page}>
-<div style={{ width: “100%”, maxWidth: 360, display: “flex”, flexDirection: “column”, alignItems: “center” }}>
+<div style={{ width: "100%", maxWidth: 360, display: "flex", flexDirection: "column", alignItems: "center" }}>
 
-```
     {/* Brand name header */}
     <div style={{ textAlign: "center", marginBottom: 24 }}>
       <div style={{ ...S.label, marginBottom: 10 }}>Exclusive Offer</div>
@@ -352,16 +345,14 @@ if (stage === “login”) return (
     </div>
   </div>
 </div>
-```
 
 );
 
 // ── SCRATCH STAGE ────────────────────────────────────
-if (stage === “scratch”) return (
+if (stage === "scratch") return (
 <div style={S.page}>
-<div style={{ width: “100%”, maxWidth: 360 }}>
+<div style={{ width: "100%", maxWidth: 360 }}>
 
-```
     <div style={{ textAlign: "center", marginBottom: 20 }}>
       <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: -0.5, marginBottom: 4 }}>
         {BRAND.name}
@@ -392,16 +383,14 @@ if (stage === “scratch”) return (
     </div>
   </div>
 </div>
-```
 
 );
 
 // ── WON STAGE ────────────────────────────────────────
 return (
 <div style={S.page}>
-<div style={{ width: “100%”, maxWidth: 360 }}>
+<div style={{ width: "100%", maxWidth: 360 }}>
 
-```
     <div style={{ textAlign: "center", marginBottom: 20 }}>
       <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: -0.5, marginBottom: 4 }}>
         {BRAND.name}
@@ -458,7 +447,6 @@ return (
     </div>
   </div>
 </div>
-```
 
 );
 }
