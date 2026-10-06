@@ -1,452 +1,377 @@
-import { useState, useRef, useEffect } from "react";
-import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, serverTimestamp } from "firebase/firestore";
+import React, { useState, useRef, useEffect } from 'react';
+import { 
+  Play, Pause, Volume2, VolumeX, RotateCcw, Download, Mic, 
+  Upload, CheckCircle2, AlertTriangle, FileText, Send, ShieldCheck, 
+  ExternalLink, Sparkles, Radio, BookmarkCheck, ArrowRight, Clock, Award,
+  Sliders, Copy, Check, RefreshCw, Users, PhoneCall, CheckSquare, Plus, Trash2, Camera, Layers
+} from 'lucide-react';
 
-// ─── FIREBASE CONFIG ─────────────────────────────────
-const firebaseConfig = {
-apiKey: "AIzaSyBmhK6Avj0ZZHYxjEKkGUAv_K06zfT57eo",
-authDomain: "gen-lang-client-0807659054.firebaseapp.com",
-projectId: "gen-lang-client-0807659054",
-storageBucket: "gen-lang-client-0807659054.firebasestorage.app",
-messagingSenderId: "545794815177",
-appId: "1:545794815177:web:5092f702c2cb3522854918"
-};
-
-const firebaseApp = initializeApp(firebaseConfig);
-const db = getFirestore(firebaseApp);
-
-// ─── BRAND CONFIG ─────────────────────────────────────
-// TO CUSTOMIZE PER CLIENT: change ONLY the values below
-const BRAND = {
-name: "KappaKuts Barbershop",
-tagline: "Where Greatness Is Personified",
-promo: "FREE Beard Trim",
-promoDetail: "with your next haircut — KappaKuts regulars only",
-expiry: "Valid at 10 Beaumaris Dr, Brampton · Expires May 31, 2026",
-confirmMsg: "Show this screen to your barber to redeem. Stay Frosty. 🔥",
-primaryColor: "#C9A84C",
-bg: "#0a0a0a",
-cardBg: "#111111",
-border: "#1e1e1e",
-// Firestore collection name — change per client so leads stay separate
-leadsCollection: "kappakuts_leads",
-};
-// ──────────────────────────────────────────────────────
-
-// Save lead to Firestore
-async function saveLead({ email, method, businessName }) {
-try {
-await addDoc(collection(db, BRAND.leadsCollection), {
-email: email || null,
-loginMethod: method,
-business: businessName,
-claimedAt: serverTimestamp(),
-});
-} catch (e) {
-console.error("Lead save error:", e);
-}
-}
-
-// ─── SCRATCH CARD ─────────────────────────────────────
-function ScratchCard({ onWin }) {
-const canvasRef = useRef(null);
-const [scratching, setScratching] = useState(false);
-const [won, setWon] = useState(false);
-const [pct, setPct] = useState(0);
-
-useEffect(() => {
-const canvas = canvasRef.current;
-if (!canvas) return;
-const ctx = canvas.getContext("2d");
-const dpr = window.devicePixelRatio || 1;
-canvas.width = canvas.offsetWidth * dpr;
-canvas.height = canvas.offsetHeight * dpr;
-ctx.scale(dpr, dpr);
-
-const w = canvas.offsetWidth;
-const h = canvas.offsetHeight;
-
-// Background gradient
-const grad = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 1.2);
-grad.addColorStop(0, "#2a2200");
-grad.addColorStop(1, "#0f0f0f");
-ctx.fillStyle = grad;
-ctx.fillRect(0, 0, w, h);
-
-// Gold burst lines
-ctx.strokeStyle = "rgba(201,168,76,0.15)";
-ctx.lineWidth = 1;
-for (let i = 0; i < 28; i++) {
-  const angle = (i / 28) * Math.PI * 2;
-  ctx.beginPath();
-  ctx.moveTo(w / 2, h / 2);
-  ctx.lineTo(w / 2 + Math.cos(angle) * w, h / 2 + Math.sin(angle) * h);
-  ctx.stroke();
-}
-
-// Scratch text
-ctx.fillStyle = BRAND.primaryColor;
-ctx.font = `bold ${w * 0.065}px system-ui`;
-ctx.textAlign = "center";
-ctx.textBaseline = "middle";
-ctx.fillText("✦ SCRATCH HERE ✦", w / 2, h / 2 - 16);
-ctx.font = `${w * 0.09}px serif`;
-ctx.fillStyle = "rgba(201,168,76,0.6)";
-ctx.fillText("✂", w / 2, h / 2 + 22);
-
-ctx.globalCompositeOperation = "destination-out";
-
-}, []);
-
-const getXY = (e, canvas) => {
-const rect = canvas.getBoundingClientRect();
-const src = e.touches ? e.touches[0] : e;
-return { x: src.clientX - rect.left, y: src.clientY - rect.top };
-};
-
-const doScratch = (e) => {
-if (!scratching || won) return;
-e.preventDefault();
-const canvas = canvasRef.current;
-const ctx = canvas.getContext("2d");
-const dpr = window.devicePixelRatio || 1;
-ctx.globalCompositeOperation = "destination-out";
-const { x, y } = getXY(e, canvas);
-ctx.beginPath();
-ctx.arc(x * dpr, y * dpr, 38 * dpr, 0, Math.PI * 2);
-ctx.fill();
-
-const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-let cleared = 0;
-for (let i = 3; i < data.length; i += 4) if (data[i] < 128) cleared++;
-const p = Math.round((cleared / (canvas.width * canvas.height)) * 100);
-setPct(p);
-if (p > 55 && !won) { setWon(true); onWin(); }
-
-};
-
-return (
-<div style={{
-position: "relative", width: "100%", height: 168,
-borderRadius: 16, overflow: "hidden",
-border: `1px solid ${BRAND.border}`,
-boxShadow: `0 0 40px rgba(201,168,76,0.08)`,
-}}>
-{/* Prize layer underneath */}
-<div style={{
-position: "absolute", inset: 0,
-background: "linear-gradient(135deg, #1a1200 0%, #0a0a0a 100%)",
-display: "flex", flexDirection: "column",
-alignItems: "center", justifyContent: "center", gap: 6,
-}}>
-<div style={{ fontSize: 10, color: BRAND.primaryColor, letterSpacing: 3, textTransform: "uppercase", fontWeight: 700 }}>
-🎉 You Won
-</div>
-<div style={{ fontSize: 28, fontWeight: 900, color: "#fff", letterSpacing: -0.5 }}>
-{BRAND.promo}
-</div>
-<div style={{ fontSize: 12, color: "#666" }}>{BRAND.promoDetail}</div>
-</div>
-
-  {/* Scratch canvas */}
-  <canvas
-    ref={canvasRef}
-    style={{
-      position: "absolute", inset: 0, width: "100%", height: "100%",
-      touchAction: "none", cursor: "crosshair",
-    }}
-    onMouseDown={() => setScratching(true)}
-    onMouseUp={() => setScratching(false)}
-    onMouseLeave={() => setScratching(false)}
-    onMouseMove={doScratch}
-    onTouchStart={(e) => { setScratching(true); doScratch(e); }}
-    onTouchEnd={() => setScratching(false)}
-    onTouchMove={doScratch}
-  />
-
-  {/* Progress hint */}
-  {pct > 5 && pct < 55 && (
-    <div style={{
-      position: "absolute", bottom: 10, left: "50%", transform: "translateX(-50%)",
-      background: "rgba(0,0,0,0.8)", color: BRAND.primaryColor,
-      fontSize: 10, fontWeight: 700, padding: "4px 12px",
-      borderRadius: 20, letterSpacing: 1, pointerEvents: "none",
-    }}>
-      {pct}% — KEEP SCRATCHING
-    </div>
-  )}
-</div>
-
-);
-}
-
-// ─── MAIN APP ─────────────────────────────────────────
 export default function App() {
-const [stage, setStage] = useState("login"); // login | scratch | won
-const [method, setMethod] = useState(null);
-const [email, setEmail] = useState("");
-const [emailError, setEmailError] = useState("");
-const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState('greenscreen'); // Default to greenscreen to showcase the new framework
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(20.17);
+  const [isMuted, setIsMuted] = useState(false);
+  const [copiedIndex, setCopiedIndex] = useState(null);
+  const videoRef = useRef(null);
 
-const S = {
-page: {
-minHeight: "100vh",
-background: BRAND.bg,
-display: "flex", alignItems: "center", justifyContent: "center",
-padding: 20,
-fontFamily: "'DM Sans', system-ui, sans-serif",
-},
-card: {
-width: "100%", maxWidth: 360,
-background: BRAND.cardBg,
-borderRadius: 22,
-border: `1px solid ${BRAND.border}`,
-padding: "28px 24px",
-boxShadow: "0 24px 80px rgba(0,0,0,0.6)",
-},
-btn: (bg, color, shadow) => ({
-width: "100%", padding: "14px 16px",
-background: bg, border: "none", borderRadius: 12,
-color, fontSize: 14, fontWeight: 700,
-cursor: "pointer", display: "flex",
-alignItems: "center", justifyContent: "center", gap: 10,
-boxShadow: shadow || "none",
-transition: "opacity 0.15s",
-}),
-label: {
-fontSize: 10, color: BRAND.primaryColor,
-letterSpacing: 3, textTransform: "uppercase", fontWeight: 700,
-},
-divider: {
-display: "flex", alignItems: "center", gap: 10, margin: "4px 0",
-},
-line: { flex: 1, height: 1, background: BRAND.border },
-};
+  // Outreach & 8 PM Call Tracker State
+  const [contacts, setContacts] = useState(() => {
+    const saved = localStorage.getItem('ghw_daily_contacts');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return [
+      { id: 1, name: "Prospect 1 (Hot Interest)", type: "Warm Market", status: "Follow-Up Needed", notes: "Watched call yesterday. Send: 'What did you like best?'", phone: "" },
+      { id: 2, name: "Mom", type: "Warm Market", status: "Follow-Up Needed", notes: "Watched call last night to support. Send positive check-in.", phone: "" },
+      { id: 3, name: "Attendee 3", type: "Warm Market", status: "Follow-Up Needed", notes: "Attended yesterday's 8 PM call.", phone: "" },
+      { id: 4, name: "Attendee 4", type: "Warm Market", status: "Follow-Up Needed", notes: "Attended yesterday's 8 PM call.", phone: "" },
+      { id: 5, name: "Attendee 5", type: "Warm Market", status: "Follow-Up Needed", notes: "Attended yesterday's 8 PM call.", phone: "" },
+      { id: 6, name: "", type: "New Outreach", status: "To Invite", notes: "Call today for tonight's 8 PM Zoom.", phone: "" },
+      { id: 7, name: "", type: "New Outreach", status: "To Invite", notes: "Call today for tonight's 8 PM Zoom.", phone: "" },
+      { id: 8, name: "", type: "New Outreach", status: "To Invite", notes: "Call today for tonight's 8 PM Zoom.", phone: "" },
+      { id: 9, name: "", type: "New Outreach", status: "To Invite", notes: "Call today for tonight's 8 PM Zoom.", phone: "" },
+      { id: 10, name: "", type: "New Outreach", status: "To Invite", notes: "Call today for tonight's 8 PM Zoom.", phone: "" },
+    ];
+  });
 
-const handleSocial = async (m) => {
-setSaving(true);
-setMethod(m);
-await saveLead({ email: null, method: m, businessName: BRAND.name });
-setSaving(false);
-setStage("scratch");
-};
+  const [newName, setNewName] = useState('');
+  const [newType, setNewType] = useState('Warm Market');
 
-const handleEmail = async () => {
-if (!email.includes("@") || !email.includes(".")) {
-setEmailError("Enter a valid email to play.");
-return;
-}
-setSaving(true);
-setMethod("email");
-await saveLead({ email, method: "email", businessName: BRAND.name });
-setSaving(false);
-setStage("scratch");
-};
+  useEffect(() => {
+    localStorage.setItem('ghw_daily_contacts', JSON.stringify(contacts));
+  }, [contacts]);
 
-const handleWin = () => {
-setTimeout(() => setStage("won"), 600);
-};
+  const updateContact = (id, field, value) => {
+    setContacts(contacts.map(c => c.id === id ? { ...c, [field]: value } : c));
+  };
 
-// ── LOGIN STAGE ──────────────────────────────────────
-if (stage === "login") return (
-<div style={S.page}>
-<div style={{ width: "100%", maxWidth: 360, display: "flex", flexDirection: "column", alignItems: "center" }}>
+  const addContact = () => {
+    if (!newName.trim()) return;
+    const newEntry = {
+      id: Date.now(),
+      name: newName.trim(),
+      type: newType,
+      status: "To Invite",
+      notes: "Invited for 8 PM call.",
+      phone: ""
+    };
+    setContacts([...contacts, newEntry]);
+    setNewName('');
+  };
 
-    {/* Brand name header */}
-    <div style={{ textAlign: "center", marginBottom: 24 }}>
-      <div style={{ ...S.label, marginBottom: 10 }}>Exclusive Offer</div>
-      <div style={{ fontSize: 26, fontWeight: 900, color: "#fff", letterSpacing: -0.5, lineHeight: 1.15, marginBottom: 6 }}>
-        Scratch & Win<br />
-        <span style={{ color: BRAND.primaryColor }}>{BRAND.promo}</span>
-      </div>
-      <div style={{ fontSize: 12, color: "#444", marginTop: 6 }}>
-        Sign in to unlock your scratch card
-      </div>
-    </div>
+  const removeContact = (id) => {
+    setContacts(contacts.filter(c => c.id !== id));
+  };
 
-    <div style={S.card}>
-      {/* Facebook */}
-      <button
-        onClick={() => handleSocial("facebook")}
-        disabled={saving}
-        style={S.btn("#1877F2", "#fff")}
-      >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
-          <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-        </svg>
-        Continue with Facebook
-      </button>
+  const confirmedTonight = contacts.filter(c => c.status === 'Confirmed 8 PM' || c.status === 'Attended').length;
 
-      <div style={{ height: 10 }} />
+  const handleCopyText = (text, idx) => {
+    navigator.clipboard.writeText(text);
+    setCopiedIndex(idx);
+    setTimeout(() => setCopiedIndex(null), 2000);
+  };
 
-      {/* Google */}
-      <button
-        onClick={() => handleSocial("google")}
-        disabled={saving}
-        style={S.btn("#fff", "#222")}
-      >
-        <svg width="18" height="18" viewBox="0 0 24 24">
-          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
-          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-        </svg>
-        Sign in with Google
-      </button>
+  return (
+    <div style={{ minHeight: '100vh', backgroundColor: '#090d16', color: '#f8fafc', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+      
+      {/* Top Header */}
+      <header style={{ borderBottom: '1px solid #1e293b', backgroundColor: '#0d1322', padding: '16px 24px' }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: '42px', height: '42px', borderRadius: '10px', backgroundColor: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px rgba(245, 158, 11, 0.4)' }}>
+              <ShieldCheck size={26} color="#000" />
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h1 style={{ fontSize: '18px', fontWeight: '800', letterSpacing: '-0.02em', margin: 0, color: '#ffffff' }}>
+                  THE GOLDEN HORSESHOE REPORT • STUDIO
+                </h1>
+                <span style={{ backgroundColor: '#1e293b', border: '1px solid #334155', color: '#10b981', fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '999px', textTransform: 'uppercase' }}>
+                  Green Screen & Borrowed Authority
+                </span>
+              </div>
+              <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8' }}>
+                Alvin Cuffy • Instagram Reel & TikTok Authority Engine (@goldenhorseshoewatch)
+              </p>
+            </div>
+          </div>
 
-      {/* Divider */}
-      <div style={{ ...S.divider, margin: "16px 0" }}>
-        <div style={S.line} />
-        <div style={{ fontSize: 11, color: "#333", letterSpacing: 1 }}>OR</div>
-        <div style={S.line} />
-      </div>
-
-      {/* Email */}
-      <input
-        type="email"
-        placeholder="Enter your email"
-        value={email}
-        onChange={e => { setEmail(e.target.value); setEmailError(""); }}
-        onKeyDown={e => e.key === "Enter" && handleEmail()}
-        style={{
-          width: "100%", padding: "13px 14px",
-          background: "#1a1a1a",
-          border: `1.5px solid ${emailError ? "#e53e3e" : "#2a2a2a"}`,
-          borderRadius: 12, color: "#fff", fontSize: 14,
-          outline: "none", boxSizing: "border-box",
-          fontFamily: "inherit", marginBottom: emailError ? 6 : 10,
-        }}
-      />
-      {emailError && (
-        <div style={{ fontSize: 11, color: "#e53e3e", marginBottom: 8 }}>
-          {emailError}
+          {/* Navigation Tabs */}
+          <nav style={{ display: 'flex', gap: '8px', backgroundColor: '#1e293b', padding: '4px', borderRadius: '12px' }}>
+            <button 
+              onClick={() => setActiveTab('greenscreen')}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: '700',
+                border: 'none', cursor: 'pointer', transition: 'all 0.2s',
+                backgroundColor: activeTab === 'greenscreen' ? '#f59e0b' : 'transparent',
+                color: activeTab === 'greenscreen' ? '#000000' : '#94a3b8'
+              }}
+            >
+              <Camera size={15} /> Green Screen Reels (New!)
+            </button>
+            <button 
+              onClick={() => setActiveTab('tracker')}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: '600',
+                border: 'none', cursor: 'pointer', transition: 'all 0.2s',
+                backgroundColor: activeTab === 'tracker' ? '#10b981' : 'transparent',
+                color: activeTab === 'tracker' ? '#ffffff' : '#94a3b8'
+              }}
+            >
+              <Users size={15} /> 10-Guest Tracker
+            </button>
+            <button 
+              onClick={() => setActiveTab('studio')}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: '600',
+                border: 'none', cursor: 'pointer', transition: 'all 0.2s',
+                backgroundColor: activeTab === 'studio' ? '#3b82f6' : 'transparent',
+                color: activeTab === 'studio' ? '#ffffff' : '#94a3b8'
+              }}
+            >
+              <Play size={15} /> Form N4 Video
+            </button>
+            <button 
+              onClick={() => setActiveTab('funnel')}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: '600',
+                border: 'none', cursor: 'pointer', transition: 'all 0.2s',
+                backgroundColor: activeTab === 'funnel' ? '#3b82f6' : 'transparent',
+                color: activeTab === 'funnel' ? '#ffffff' : '#94a3b8'
+              }}
+            >
+              <Send size={15} /> DM Scripts
+            </button>
+          </nav>
         </div>
-      )}
+      </header>
 
-      <button
-        onClick={handleEmail}
-        disabled={saving}
-        style={S.btn(
-          BRAND.primaryColor, "#0a0a0a",
-          `0 4px 24px ${BRAND.primaryColor}55`
+      {/* Main Studio Body */}
+      <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '24px 16px' }}>
+        
+        {/* TAB: GREEN SCREEN REELS ENGINE */}
+        {activeTab === 'greenscreen' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+            
+            {/* Strategy Explainer Banner */}
+            <div style={{ backgroundColor: '#0f172a', borderRadius: '20px', border: '1px solid #1e293b', padding: '24px 28px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '12px' }}>
+                <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Layers size={24} color="#000" />
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '20px', fontWeight: '800', margin: 0, color: '#ffffff' }}>
+                    Alvin Cuffy Green Screen "Borrowed Authority" Framework
+                  </h2>
+                  <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8' }}>
+                    Positioning you as the trusted local watchdog pointing directly at official Ontario e-Laws statutes
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginTop: '16px' }}>
+                <div style={{ backgroundColor: '#0d1322', borderRadius: '12px', border: '1px solid #1e293b', padding: '16px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '800', color: '#f59e0b' }}>1. THE BACKGROUND</span>
+                  <p style={{ margin: '6px 0 0 0', fontSize: '13px', color: '#cbd5e1' }}>Official <code style={{ color: '#38bdf8' }}>ontario.ca</code> government document with clean bullet points and statutory citations.</p>
+                </div>
+                <div style={{ backgroundColor: '#0d1322', borderRadius: '12px', border: '1px solid #1e293b', padding: '16px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '800', color: '#10b981' }}>2. THE FOREGROUND</span>
+                  <p style={{ margin: '6px 0 0 0', fontSize: '13px', color: '#cbd5e1' }}>You in the lower-third, pointing directly up/left at the exact clause as you explain it.</p>
+                </div>
+                <div style={{ backgroundColor: '#0d1322', borderRadius: '12px', border: '1px solid #1e293b', padding: '16px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '800', color: '#3b82f6' }}>3. THE CONVERSION</span>
+                  <p style={{ margin: '6px 0 0 0', fontSize: '13px', color: '#cbd5e1' }}>Call out a DM keyword ("ENTRY" / "CHECKLIST") to drive hot prospects into private 1-on-1 chats.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Template 1 & 2 Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(440px, 1fr))', gap: '24px' }}>
+              
+              {/* Template 1: Unannounced Entry */}
+              <div style={{ backgroundColor: '#0f172a', borderRadius: '20px', border: '1px solid #1e293b', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '12px', fontWeight: '800', backgroundColor: '#3b82f6', color: '#fff', padding: '4px 10px', borderRadius: '6px' }}>
+                    TEMPLATE 1 • TENANT RIGHTS (RTA S. 27)
+                  </span>
+                  <a 
+                    href="/media/greenscreen_template_unannounced_entry.png" 
+                    download="greenscreen_template_unannounced_entry.png"
+                    style={{ backgroundColor: '#10b981', color: '#fff', textDecoration: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    <Download size={14} /> Download 1080x1920
+                  </a>
+                </div>
+
+                <div style={{ width: '100%', aspectRatio: '9/16', backgroundColor: '#000', borderRadius: '12px', overflow: 'hidden', border: '1px solid #334155' }}>
+                  <img src="/media/greenscreen_template_unannounced_entry.png" alt="Unannounced Entry Green Screen" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+
+                {/* Teleprompter & Camera Cues */}
+                <div style={{ backgroundColor: '#0d1322', borderRadius: '12px', border: '1px solid #1e293b', padding: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: '800', color: '#f59e0b' }}>35-SECOND GREEN SCREEN SCRIPT:</span>
+                    <button 
+                      onClick={() => handleCopyText("Your landlord just walked into your unit unannounced? Here's what the law actually says in Ontario. Under Section 27 of the Residential Tenancies Act, your landlord MUST give you 24 hours written notice before entering. The notice must state the exact reason and a time between 8 AM and 8 PM. The ONLY exception is a genuine emergency like a flood or fire. If your landlord enters illegally, they face fines up to $50,000. If you're dealing with illegal entries or landlord harassment in the GTA, DM me the word 'ENTRY' for our free Ontario tenant rights guide.", 201)}
+                      style={{ backgroundColor: copiedIndex === 201 ? '#10b981' : '#1e293b', border: '1px solid #334155', color: '#fff', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}
+                    >
+                      {copiedIndex === 201 ? 'Copied!' : 'Copy Script'}
+                    </button>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '13px', color: '#cbd5e1', lineHeight: '1.6' }}>
+                    <strong style={{ color: '#38bdf8' }}>[0:00 - Point UP 👆]:</strong> "Your landlord just walked into your unit unannounced? Here's what the law actually says in Ontario.<br/>
+                    <strong style={{ color: '#f59e0b' }}>[0:08 - Point to Notice Bullet]:</strong> Under Section 27 of the Residential Tenancies Act, your landlord MUST give you 24 hours written notice before entering. The notice must state the exact reason and a time between 8 AM and 8 PM.<br/>
+                    <strong style={{ color: '#ef4444' }}>[0:20 - Point to Red Box]:</strong> The ONLY exception is a genuine emergency like a flood or fire.<br/>
+                    <strong style={{ color: '#10b981' }}>[0:28 - Look directly into camera]:</strong> If you're dealing with illegal landlord entries in the GTA, DM me the word <strong>'ENTRY'</strong> for our free Ontario tenant rights guide."
+                  </p>
+                </div>
+              </div>
+
+              {/* Template 2: Why Are You Still A Landlord? */}
+              <div style={{ backgroundColor: '#0f172a', borderRadius: '20px', border: '1px solid #1e293b', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '12px', fontWeight: '800', backgroundColor: '#ef4444', color: '#fff', padding: '4px 10px', borderRadius: '6px' }}>
+                    TEMPLATE 2 • LANDLORD TENSION (RTA S. 59)
+                  </span>
+                  <a 
+                    href="/media/greenscreen_template_why_still_landlord.png" 
+                    download="greenscreen_template_why_still_landlord.png"
+                    style={{ backgroundColor: '#10b981', color: '#fff', textDecoration: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    <Download size={14} /> Download 1080x1920
+                  </a>
+                </div>
+
+                <div style={{ width: '100%', aspectRatio: '9/16', backgroundColor: '#000', borderRadius: '12px', overflow: 'hidden', border: '1px solid #334155' }}>
+                  <img src="/media/greenscreen_template_why_still_landlord.png" alt="Why Still Landlord Green Screen" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+
+                {/* Teleprompter & Camera Cues */}
+                <div style={{ backgroundColor: '#0d1322', borderRadius: '12px', border: '1px solid #1e293b', padding: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: '800', color: '#ef4444' }}>40-SECOND GREEN SCREEN SCRIPT:</span>
+                    <button 
+                      onClick={() => handleCopyText("Ontario landlords... why are you still doing this? With everything going on across Brampton, Mississauga, and Toronto, why would anyone willingly be a landlord in this province right now? Look at the math: average LTB delay is 8 to 10 months. Even if your tenant owes $60,000, the tribunal maximum is capped at $35,000. And if you make one single calendar error on your N4 notice, your case is thrown out on day one. If you're currently holding rental property in Ontario, what is your actual game plan? Drop your thoughts below or DM me 'CHECKLIST' for our free pre-filing audit guide.", 202)}
+                      style={{ backgroundColor: copiedIndex === 202 ? '#10b981' : '#1e293b', border: '1px solid #334155', color: '#fff', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}
+                    >
+                      {copiedIndex === 202 ? 'Copied!' : 'Copy Script'}
+                    </button>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '13px', color: '#cbd5e1', lineHeight: '1.6' }}>
+                    <strong style={{ color: '#ef4444' }}>[0:00 - Hands to Head / Shocked]:</strong> "Ontario landlords... why are you still doing this? With everything going on across Brampton, Mississauga, and Toronto, why would anyone willingly be a landlord in this province right now?<br/>
+                    <strong style={{ color: '#f59e0b' }}>[0:12 - Point to Stats]:</strong> Look at the math: average LTB delay is 8 to 10 months. Even if your tenant owes $60,000, the tribunal maximum is capped at $35,000.<br/>
+                    <strong style={{ color: '#38bdf8' }}>[0:24 - Point to Fatal Defect]:</strong> And if you make one single calendar error on your N4 notice, your case is thrown out on day one.<br/>
+                    <strong style={{ color: '#10b981' }}>[0:32 - Call to Action]:</strong> If you're holding rental property in Ontario, what's your plan? Drop your thoughts below or DM me <strong>'CHECKLIST'</strong> to join our nightly landlord strategy overview."
+                  </p>
+                </div>
+              </div>
+
+            </div>
+
+            {/* How to Film on Phone Instructions */}
+            <div style={{ backgroundColor: '#0d1322', borderRadius: '16px', border: '1px solid #1e293b', padding: '20px' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: '800', margin: '0 0 10px 0', color: '#10b981' }}>
+                📱 How to Record This in 3 Minutes on Instagram / TikTok / CapCut:
+              </h3>
+              <ol style={{ margin: 0, paddingLeft: '20px', fontSize: '13px', color: '#cbd5e1', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <li>Click <strong>"Download 1080x1920"</strong> on either template above and save the image to your phone's photo gallery.</li>
+                <li>Open **Instagram Reels** or **TikTok** → tap **Effects / Filters** → select **"Green Screen"**.</li>
+                <li>Choose the downloaded document template as your background photo.</li>
+                <li>Stand in the bottom-right or bottom-center (just like your reference photos), hit record, and read the script while pointing at the bullet points!</li>
+              </ol>
+            </div>
+
+          </div>
         )}
-      >
-        {saving ? "LOADING..." : "▶ PLAY NOW"}
-      </button>
 
-      <div style={{ fontSize: 10, color: "#2a2a2a", textAlign: "center", marginTop: 14, lineHeight: 1.6 }}>
-        By playing you agree to receive promotional messages from {BRAND.name}.
-        Your info is never sold.
-      </div>
-    </div>
+        {/* TAB: TRACKER */}
+        {activeTab === 'tracker' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+              <div style={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '16px', padding: '20px' }}>
+                <span style={{ fontSize: '12px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>Tonight's 8:00 PM Goal</span>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '6px' }}>
+                  <span style={{ fontSize: '32px', fontWeight: '900', color: '#10b981' }}>{confirmedTonight}</span>
+                  <span style={{ fontSize: '18px', color: '#64748b', fontWeight: '700' }}>/ 10 Confirmed</span>
+                </div>
+                <div style={{ marginTop: '12px', width: '100%', height: '8px', backgroundColor: '#1e293b', borderRadius: '999px', overflow: 'hidden' }}>
+                  <div style={{ width: `${Math.min((confirmedTonight / 10) * 100, 100)}%`, height: '100%', backgroundColor: '#10b981' }}></div>
+                </div>
+              </div>
+              <div style={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '16px', padding: '20px' }}>
+                <span style={{ fontSize: '12px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>Daily Window</span>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '6px' }}>
+                  <span style={{ fontSize: '24px', fontWeight: '900', color: '#f59e0b' }}>10:00 AM – 3:00 PM</span>
+                </div>
+                <p style={{ margin: '8px 0 0 0', fontSize: '12px', color: '#cbd5e1' }}>5 Hours: Reachouts → Content → Follow-ups → Confirmations.</p>
+              </div>
+            </div>
 
-    <div style={{ marginTop: 20, fontSize: 10, color: "#1e1e1e", letterSpacing: 2, textTransform: "uppercase" }}>
-      Digital Scratch-Offs by Omri Media
-    </div>
-  </div>
-</div>
-
-);
-
-// ── SCRATCH STAGE ────────────────────────────────────
-if (stage === "scratch") return (
-<div style={S.page}>
-<div style={{ width: "100%", maxWidth: 360 }}>
-
-    <div style={{ textAlign: "center", marginBottom: 20 }}>
-      <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: -0.5, marginBottom: 4 }}>
-        {BRAND.name}
-      </div>
-      <div style={{ fontSize: 12, color: "#444" }}>{BRAND.tagline}</div>
-    </div>
-
-    <div style={S.card}>
-      <div style={{ textAlign: "center", marginBottom: 18 }}>
-        <div style={{ ...S.label, marginBottom: 8 }}>🎉 You're in — now scratch</div>
-        <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", marginBottom: 4 }}>
-          Reveal your exclusive prize
-        </div>
-        <div style={{ fontSize: 12, color: "#444" }}>
-          Use your finger to scratch below
-        </div>
-      </div>
-
-      <ScratchCard onWin={handleWin} />
-
-      <div style={{ textAlign: "center", marginTop: 14, fontSize: 11, color: "#2a2a2a" }}>
-        {BRAND.expiry}
-      </div>
-    </div>
-
-    <div style={{ textAlign: "center", marginTop: 20, fontSize: 10, color: "#1e1e1e", letterSpacing: 2, textTransform: "uppercase" }}>
-      Digital Scratch-Offs by Omri Media
-    </div>
-  </div>
-</div>
-
-);
-
-// ── WON STAGE ────────────────────────────────────────
-return (
-<div style={S.page}>
-<div style={{ width: "100%", maxWidth: 360 }}>
-
-    <div style={{ textAlign: "center", marginBottom: 20 }}>
-      <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: -0.5, marginBottom: 4 }}>
-        {BRAND.name}
-      </div>
-      <div style={{ fontSize: 12, color: "#444" }}>{BRAND.tagline}</div>
-    </div>
-
-    <div style={S.card}>
-      <div style={{ textAlign: "center" }}>
-        <div style={{ fontSize: 52, marginBottom: 12 }}>🏆</div>
-        <div style={{ ...S.label, marginBottom: 8 }}>Congratulations</div>
-        <div style={{ fontSize: 30, fontWeight: 900, color: "#fff", letterSpacing: -0.5, marginBottom: 6 }}>
-          {BRAND.promo}
-        </div>
-        <div style={{ fontSize: 13, color: "#555", marginBottom: 24 }}>
-          {BRAND.promoDetail}
-        </div>
-
-        {/* Prize card */}
-        <div style={{
-          background: "linear-gradient(135deg, #1a1200 0%, #0f0f0f 100%)",
-          border: `2px dashed ${BRAND.primaryColor}`,
-          borderRadius: 16, padding: "22px 20px", marginBottom: 18,
-        }}>
-          <div style={{ fontSize: 10, color: "#444", letterSpacing: 2, textTransform: "uppercase", marginBottom: 8 }}>
-            Your Prize
+            <div style={{ backgroundColor: '#0f172a', borderRadius: '16px', border: '1px solid #1e293b', padding: '20px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: '800', margin: '0 0 16px 0', color: '#ffffff' }}>Active Contacts & Follow-ups</h3>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid #1e293b', color: '#94a3b8' }}>
+                      <th style={{ padding: '10px 12px' }}>#</th>
+                      <th style={{ padding: '10px 12px' }}>Name</th>
+                      <th style={{ padding: '10px 12px' }}>Type</th>
+                      <th style={{ padding: '10px 12px' }}>Status</th>
+                      <th style={{ padding: '10px 12px' }}>Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {contacts.map((c, index) => (
+                      <tr key={c.id} style={{ borderBottom: '1px solid #1e293b' }}>
+                        <td style={{ padding: '12px', color: '#64748b', fontWeight: '700' }}>{index + 1}</td>
+                        <td style={{ padding: '12px', fontWeight: '600' }}>{c.name || "Enter Name..."}</td>
+                        <td style={{ padding: '12px' }}><span style={{ fontSize: '11px', fontWeight: '700', backgroundColor: '#1e293b', padding: '3px 8px', borderRadius: '4px' }}>{c.type}</span></td>
+                        <td style={{ padding: '12px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: '700', backgroundColor: c.status === 'Confirmed 8 PM' ? '#10b981' : '#f59e0b', color: '#000', padding: '3px 8px', borderRadius: '4px' }}>
+                            {c.status}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px', color: '#94a3b8' }}>{c.notes}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
-          <div style={{ fontSize: 26, fontWeight: 900, color: BRAND.primaryColor, marginBottom: 4 }}>
-            {BRAND.promo}
+        )}
+
+        {/* TAB: STUDIO */}
+        {activeTab === 'studio' && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 420px) 1fr', gap: '28px', alignItems: 'start' }}>
+            <div style={{ backgroundColor: '#0f172a', borderRadius: '20px', border: '1px solid #1e293b', padding: '16px' }}>
+              <video
+                ref={videoRef}
+                src="/media/ontario_n4_calendar_trap_reel.mp4"
+                playsInline
+                onTimeUpdate={() => { if (videoRef.current) setCurrentTime(videoRef.current.currentTime); }}
+                style={{ width: '100%', aspectRatio: '9/16', objectFit: 'contain', backgroundColor: '#000', borderRadius: '16px' }}
+              />
+            </div>
           </div>
-          <div style={{ fontSize: 12, color: "#555" }}>{BRAND.promoDetail}</div>
-        </div>
+        )}
 
-        {/* Redeem message */}
-        <div style={{
-          background: "#0f0f0f", border: `1px solid ${BRAND.border}`,
-          borderRadius: 12, padding: "14px 16px", marginBottom: 16,
-          fontSize: 14, color: "#F5F0E8", lineHeight: 1.6,
-        }}>
-          {BRAND.confirmMsg}
-        </div>
+        {/* TAB: FUNNEL */}
+        {activeTab === 'funnel' && (
+          <div style={{ maxWidth: '850px', margin: '0 auto' }}>
+            <div style={{ backgroundColor: '#0f172a', borderRadius: '20px', border: '1px solid #1e293b', padding: '28px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: '800', margin: '0 0 16px 0', color: '#ffffff' }}>Inbound DM "CHECKLIST" Conversion Blueprint</h2>
+              <p style={{ color: '#94a3b8', fontSize: '14px' }}>"Hey! Here is the direct link to the Ontario LTB Pre-Filing Checklist. Quick question: are you currently dealing with a non-payment situation right now?"</p>
+            </div>
+          </div>
+        )}
 
-        <div style={{ fontSize: 11, color: "#2a2a2a" }}>{BRAND.expiry}</div>
-
-        <div style={{
-          marginTop: 22, paddingTop: 16,
-          borderTop: `1px solid ${BRAND.border}`,
-          fontSize: 10, color: "#1e1e1e",
-          letterSpacing: 2, textTransform: "uppercase",
-        }}>
-          Digital Scratch-Offs by Omri Media
-        </div>
-      </div>
+      </main>
     </div>
-  </div>
-</div>
-
-);
+  );
 }
